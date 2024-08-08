@@ -3,16 +3,29 @@ const router = express.Router();
 const { Users } = require("../models");
 const bcrypt = require("bcrypt");
 
+const { sign } = require('jsonwebtoken')
+require("dotenv").config();
+
 router.post("/", async (req, res) => {
   const { username, password } = req.body;
-  // Similar to Flask-login hashing function
-  bcrypt.hash(password, 10).then((hash) => {
-    Users.create({
-      username: username,
-      password: hash,
+
+  try {
+    const userExists = await Users.findOne({ where: { username: username } });
+    if (userExists) {
+      return res.status(400).json({ error: "Username already exists" });
+    }
+    // Similar to Flask-login hashing function
+    bcrypt.hash(password, 10).then((hash) => {
+      Users.create({
+        username: username,
+        password: hash,
+      });
+      res.json("SUCCESS");
     });
-    res.json("SUCCESS");
-  });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal server error " });
+  }
 });
 
 router.post("/login", async (req, res) => {
@@ -32,12 +45,12 @@ router.post("/login", async (req, res) => {
       return res.json({ error: "Wrong Username And Password Combination" });
     }
 
-    res.json("YOU LOGGED IN!!!");
+    const accessToken = sign({username: user.username, id: user.id}, process.env.SECRET_STRING)
+    res.json(accessToken);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "An error occurred during login" });
   }
 });
-
 
 module.exports = router;

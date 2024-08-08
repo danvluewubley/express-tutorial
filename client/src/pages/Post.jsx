@@ -19,16 +19,28 @@ function Post() {
 
   const addComment = () => {
     axios
-      .post("http://localhost:3001/comments", {
-        commentBody: newComment,
-        PostId: id,
-      })
+      .post(
+        "http://localhost:3001/comments",
+        {
+          commentBody: newComment,
+          PostId: id,
+        },
+        {
+          headers: {
+            accessToken: sessionStorage.getItem("accessToken"),
+          },
+        }
+      )
       .then((response) => {
-        // Automatically adds new comment to the end of the list
-        const commentToAdd = {commentBody: newComment}
-        setComments([...comments, commentToAdd])
-        // Resets commenting input
-        setNewComment("")
+        if (response.data.error) {
+          alert(response.data.error);
+        } else {
+          // Automatically adds new comment to the end of the list
+          const commentToAdd = { commentBody: newComment };
+          setComments([...comments, commentToAdd]);
+          // Resets commenting input
+          setNewComment("");
+        }
       });
   };
 
